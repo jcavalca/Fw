@@ -301,7 +301,7 @@ int main(int argc, char *argv[]){
 	int start = 1;
 /*Storing words in Hash Table*/
 	if (commandLine != 2){
-		k = (int) argv[2][0];	
+		k = atoi(argv[2]);	 
 		start = 3;
 	}else{
 		k = 10;
@@ -323,11 +323,6 @@ int main(int argc, char *argv[]){
 		perror("fopen");
 		}
 	}
-
-	/*ERASE LATER*/
-	printf("This is k %d \n", k);
-
-
 
 	/*Missing sorting and printing*/
 
