@@ -2,6 +2,7 @@
 # include <stdlib.h>
 # include <string.h>
 # include <math.h>
+#include <ctype.h>
 
 # include "table.h"
 
@@ -103,7 +104,7 @@ int isPresent(Table *table, char *string){
 			return 1;
 		}else{
 			count++;
-			new_index = (index + (int) pow(count, 2)) % (table -> cap);
+		new_index = (index + (int) pow(count, 2)) % (table -> cap);
 		}
 	}
 }
@@ -127,7 +128,7 @@ int get_index(Table *table, char *string)
                         return new_index;
                 }else{
                         count++;
-                        new_index = (index + (int) pow(count, 2)) % (table -> cap);
+                new_index = (index + (int) pow(count, 2)) % (table -> cap);
                 }
 	}
 }
@@ -135,24 +136,6 @@ int get_index(Table *table, char *string)
 /* Find the frequency of a word if present.
  * If not, outputs 0. */
 int get_freq(Table *table, int index){
-	
-	/*
-	int index = horner_hash(table, string);
-        int new_index = index;
- 	int count = 0;
-        Data **array = table -> hashArr;
-        while (1>0){
-                if(array[new_index] -> word == NULL){
-                        return -1;
-                
-                } else if(strcmp(array[new_index] -> word, string) == 0){
-                        return array[new_index] -> freq;
-                }else{  
-                        count++;
-                        new_index = (index + (int) pow(count, 2)) % (table -> cap);
-                }
-        }
-	*/
 	Data **array = table -> hashArr;
 	Data *data = array[index];
 	
@@ -190,23 +173,167 @@ void add(Table *table, char *string)
 			return;		
 		}else{
 			count++;
-			new_index = (index + (int) pow(count, 2)) % (table -> cap);
+		new_index = (index + (int) pow(count, 2)) % (table -> cap);
 		}
 	}
 }
 
+
+/* This part is responsible for cleaning*/
+
+void destroyTable(Table *table)
+{
+	destroyHashArr(table -> hashArr, table -> cap);
+	free(table);
+
+}
+
+void destroyHashArr(Data **array, long int size)
+{
+	long int count;
+	for (count = 0; count < size; count++){
+		destroyWord(array[count] -> word);
+		free(array[count]);
+	}	
+
+}
+
+void destroyWord(char *word){
+	free(word);
+}
+
+
+
 /* This part of the program will be responsible 
  * for reading words from an input file. */
 
+char *read_long_word(FILE *file){
+        int currentChar;
+        int wordLimit = 100; /* Arbitrary, grows as needed*/
+        int charCount = 0;
+        char *word = malloc(wordLimit * sizeof(char));
+        currentChar = fgetc(file);
+	
+	/* Checking if first character is not part of a word, 
+ 	 * for example, many white spaces.	         */
+	while ( isalpha(currentChar) == 0){
+		currentChar = fgetc(file);
+		if (currentChar == EOF)
+			break;
+	}
+        while (isalpha(currentChar) && currentChar != EOF){
 
-int main(int argc, char*argv[]){
+                /* Growing my word if needed*/
+                if (charCount > wordLimit - 5){
+                        wordLimit *= 2;
+                        word = realloc(word, wordLimit);
+                }
 
-	char * word1 = "hello";	
-	char * word2 = "world";
-	char *word3 = "zzzzzzzzzzz";
+                word[charCount] = (char) tolower(currentChar);
+                charCount++;
+                currentChar = fgetc(file);
+
+                /*Getting the last word*/
+                if (currentChar == EOF){
+                        word[charCount] = '\0';
+                        return word;}
+        }
+
+        if (currentChar == EOF){
+                return NULL;}
+        else
+                word[charCount] = '\0';
+                return word;
+
+}
+
+/* This part of the program is responsible for sorting 
+ * the words in descending order. Then, words with higher
+ * frequency will be first, and ties will be decided based
+ * on reverse alphabetical order.*/
+
+
+/*void sortArray(Data **hashArr){}
+
+
+int compareTo(Data *data1, Data *data2){}*/
+
+
+
+/*This part of the program decides type of command line input
+ *
+ * TYPE 1: User uses -n and specifies how many words. 
+ * TYPE 2: User doesn't use -n flag, program defaults k to 10.
+ * */
+
+
+
+int typeOfCommand(int argc, char* argv[]){
+	if(strcmp(argv[1], "-n") == 0){
+
+		/*Used -n flag, but didn't give more inputs*/
+		if ( ! (argc > 2)){
+			printf("usage: fw [-n num] [ file1 [ file 2 ...] ]\n");
+			exit(1);
+		}		
+		/*Used -n flag, but didn't give a proper number k*/	
+		if ( !isdigit(argv[2][0]) ){
+			printf("usage: fw [-n num] [ file1 [ file 2 ...] ]\n");
+			exit(1);
+			}
+		}
+		return 1;
+	/* we still have to deal with -n[number] ... */
+	
+	/* No -n flag*/
+	
+	return 2;
+}
+
+
+
+int main(int argc, char *argv[]){
+
 	Table *table = createHashTable();
-	printf("horner for hello: %d\n", horner_hash(table, word1));
-	printf("horner for world: %d\n", horner_hash(table, word2));
-	printf("horner for something: %d\n", horner_hash(table, word3));
+	int commandLine = typeOfCommand(argc, argv);
+	int k; 
+	int count;
+	int start = 1;
+/*Storing words in Hash Table*/
+	if (commandLine != 2){
+		k = (int) argv[2][0];	
+		start = 3;
+	}else{
+		k = 10;
+	}
+	/* Iterating over all files*/
+	for (count = start; count < argc; count++ ){
+	
+		FILE *currentFile = fopen(argv[count], "r");
+	
+		if ( currentFile != NULL){
+
+			char* currentWord = read_long_word(currentFile);
+			while (currentWord != NULL){
+				add(table, currentWord);
+				currentWord = read_long_word(currentFile);
+			} 
+		fclose(currentFile);
+		}else{
+		perror("fopen");
+		}
+	}
+
+	/*ERASE LATER*/
+	printf("This is k %d \n", k);
+
+
+
+	/*Missing sorting and printing*/
+
+	printf("How many words in the testFile: %d \n", (int) table -> size);
+
+	
+	destroyTable(table);     
 	return 0;
 }
