@@ -32,27 +32,58 @@ void myRealloc(Table *table, long int new_cap){
 	long int old_cap = table -> cap;
 	Data **new_array = malloc( new_cap * sizeof(Data *));
 	int count;
-	for (count = 0; count < old_cap; count++){
-
-		new_array[count] = table -> hashArr[count];
-	}  
 	table -> cap = new_cap;
+	flagRealloc(new_array, 0, new_cap);
+
+	for (count = 0; count < old_cap; count++){
+		addGrow(table, new_array, table -> hashArr[count]);
+	}  
+
 	free(table -> hashArr);
 	table -> hashArr = new_array;
-	flagRealloc(table -> hashArr, old_cap, new_cap);
 
 }
 
-
+/* This function is only used when growing the 
+ * hashArr, we are passing table and a Data* and returning
+ * void. */
+void addGrow(Table *table, Data** array, Data *data)
+{
+ 	char *string = data -> word;
+       	int count = 0;
+	int index, new_index;
+	if (string != NULL){
+		index = horner_hash(table, string);
+		new_index = index;}
+	else{
+		free(data);
+	}
+        while (1 > 0){
+	        /*Found empty spot*/
+                if (array[new_index] -> word == NULL){
+        		 free(array[new_index]);
+	               	 array[new_index] = data;
+			 return;
+               }
+		new_index = (index + count) % (table -> cap);
+		count++;
+        }
+}
 
 /* Initializes table structure with decently large 
  *  * capacity for the hash array. */
 Table *createHashTable(){
 	Table* table = malloc(2*sizeof(long int) + sizeof(Data **));
-	table -> cap =  70793;
+/*	table -> cap =  70793;
         table -> size = 0;
 	table -> hashArr = malloc( 70793 * sizeof(Data *));
-        flagRealloc(table -> hashArr, 0,  70793);
+        flagRealloc(table -> hashArr, 0,  70793);*/
+
+	table -> cap =  418665*2 + 1;
+        table -> size = 0;
+        table -> hashArr = malloc( (418665*2 + 1) * sizeof(Data *));
+        flagRealloc(table -> hashArr, 0,  418665*2 + 1);
+
         return table;
 
 }
@@ -178,6 +209,7 @@ void add(Table *table, char *string)
 		table -> size = (table -> size) + 1;
 	}
 	growTable(table);
+	array = table -> hashArr;
 	while (1 > 0){
 		/*New word in*/
 		if (array[new_index] -> word == NULL){
@@ -210,7 +242,8 @@ void destroyHashArr(Data **array, long int size)
 	for (count = 0; count < size; count++){
 		destroyWord(array[count] -> word);
 		free(array[count]);
-	}	
+	}
+	free(array);	
 
 }
 
@@ -404,3 +437,4 @@ int main(int argc, char *argv[]){
 	destroyTable(table);     
 	return 0;
 }
+        int count = 0;
