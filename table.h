@@ -40,6 +40,8 @@ void destroyWord(char *word);
 char *read_long_word(FILE *file);
 
 /* Sorting Part*/
+void sortArray(Table *table);
+int compareData(const void *data1, const void *data2);
 
 /* Command Line Inputs*/
 int typeOfCommand(int argc, char* argv[]);

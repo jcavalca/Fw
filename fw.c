@@ -20,11 +20,26 @@ void flagRealloc(Data **hashArr, int start, int end){
 	int count;
 	for(count = start; count < end; count ++)
 	{
-		Data * data = malloc(sizeof(Data));
-       	        data -> word = NULL;
+		Data *data = malloc(sizeof(Data));
+      	        data -> word = NULL;
        	 	data -> freq = 0;
 		hashArr[count] = data;
 	}
+
+}
+
+void myRealloc(Table *table, long int new_cap){
+	long int old_cap = table -> cap;
+	Data ** new_array = malloc( new_cap * sizeof(Data *));
+	int count;
+	for (count = 0; count < old_cap; count++){
+
+		new_array[count] = table -> hashArr[count];
+	}  
+	table -> cap = new_cap;
+	free(table -> hashArr);
+	table -> hashArr = new_array;
+	flagRealloc(table -> hashArr, old_cap, new_cap);
 
 }
 
@@ -32,11 +47,12 @@ void flagRealloc(Data **hashArr, int start, int end){
  * capacity for the hash array. */
 Table *createHashTable(){
 	Table* table = malloc(2*sizeof(long int) + sizeof(Data **));
-	table -> cap = 31091;
-	table -> size = 0;
-	table -> hashArr = malloc( 31091 * sizeof(Data *));
-	flagRealloc(table -> hashArr, 0, 31091);
-	return table;
+	table -> cap =  31091;
+        table -> size = 0;
+	table -> hashArr = malloc(  31091 * sizeof(Data *));
+        flagRealloc(table -> hashArr, 0,  31091);
+        return table;
+
 }
 
 /*Returns 0 if we don't need to grow table
@@ -53,12 +69,14 @@ int isFull(Table *table){
 
 /*Only grow if necessary*/
 void growTable(Table *table){
-	long int old_cap;
+	long int old_cap, new_cap;
 	if (isFull(table) == 1){
 		old_cap = table -> cap;
-		table -> cap = 2*old_cap + 1;
-		table -> hashArr= realloc(table, table -> cap);
-		flagRealloc(table -> hashArr, old_cap, table -> cap);
+		new_cap = 2*old_cap + 1;
+		table -> cap = new_cap;
+		table -> hashArr = realloc(table, new_cap);
+		myRealloc(table, new_cap);
+	/*	flagRealloc(table -> hashArr, old_cap, new_cap); */
 	}
 }
 
@@ -103,8 +121,8 @@ int isPresent(Table *table, char *string){
 		} else if(strcmp(array[new_index] -> word, string) == 0){
 			return 1;
 		}else{
-			count++;
-		new_index = (index + (int) pow(count, 2)) % (table -> cap);
+		new_index = (index + (int) pow(2, count)) % (table -> cap);
+		count++;
 		}
 	}
 }
@@ -127,9 +145,10 @@ int get_index(Table *table, char *string)
                 } else if(strcmp(array[new_index] -> word, string) == 0){
                         return new_index;
                 }else{
-                        count++;
-                new_index = (index + (int) pow(count, 2)) % (table -> cap);
-                }
+                 
+                new_index = (index + (int) pow(2, count)) % (table -> cap);
+        	count++;     
+	   }
 	}
 }
 
@@ -160,7 +179,6 @@ void add(Table *table, char *string)
 		growTable(table);
 	}
 	while (1 > 0){
-		
 		/*New word in*/
 		if (array[new_index] -> word == NULL){
 			Data *new_word = array[new_index];
@@ -168,13 +186,12 @@ void add(Table *table, char *string)
 			new_word -> word = string;
 			return;
 		}else if (strcmp(array[new_index] -> word, string) == 0){
+			
 			old_freq = array[new_index] -> freq;
 			array[new_index] -> freq = old_freq + 1;
-			return;		
-		}else{
-			count++;
-		new_index = (index + (int) pow(count, 2)) % (table -> cap);
-		}
+			return;}		
+		new_index = (index + (int) pow(2, count) ) % (table -> cap);
+		count++;
 	}
 }
 
@@ -253,10 +270,32 @@ char *read_long_word(FILE *file){
  * on reverse alphabetical order.*/
 
 
-/*void sortArray(Data **hashArr){}
+/* This functions tells qsort how to compare two Data pointers.
+ * Words with higher frequency will come first and ties will 
+ * be decided upon reverse alphabetical order (descending order). */
+int compareData(const void *p1, const void *p2){
+	
+	Data *data1 = * (Data * const *) p1;
+	Data *data2 = * (Data * const *) p2 ;
 
+	char *word1 = data1 -> word;	
+	char *word2 = data2 -> word;	
+		
+	int freq1 = data1 -> freq;
+	int freq2 = data2 -> freq;	
 
-int compareTo(Data *data1, Data *data2){}*/
+	/* Higher frequency will be first in array*/
+	if ( freq1 != freq2){
+		return - (freq1 - freq2);
+	
+	/* Both words are NULL*/
+	}else if(word1 == word2){		
+		return 0;
+	/* Both elements have words*/
+	}else{
+		return - strcmp(word1, word2);
+	}
+}
 
 
 
@@ -269,7 +308,7 @@ int compareTo(Data *data1, Data *data2){}*/
 
 
 int typeOfCommand(int argc, char* argv[]){
-	if(strcmp(argv[1], "-n") == 0){
+	if( argv[1][0] != '/' && strcmp(argv[1], "-n") ==  0){
 
 		/*Used -n flag, but didn't give more inputs*/
 		if ( ! (argc > 2)){
@@ -281,8 +320,9 @@ int typeOfCommand(int argc, char* argv[]){
 			printf("usage: fw [-n num] [ file1 [ file 2 ...] ]\n");
 			exit(1);
 			}
-		}
+		
 		return 1;
+	}
 	/* we still have to deal with -n[number] ... */
 	
 	/* No -n flag*/
@@ -300,7 +340,7 @@ int main(int argc, char *argv[]){
 	int count;
 	int start = 1;
 /*Storing words in Hash Table*/
-	if (commandLine != 2){
+	if (commandLine == 1){
 		k = atoi(argv[2]);	 
 		start = 3;
 	}else{
@@ -320,14 +360,30 @@ int main(int argc, char *argv[]){
 			} 
 		fclose(currentFile);
 		}else{
-		perror("fopen");
+		perror(argv[count]);
 		}
 	}
+	
 
-	/*Missing sorting and printing*/
+	qsort(table -> hashArr, table -> cap, sizeof(Data *), compareData);
 
-	printf("How many words in the testFile: %d \n", (int) table -> size);
 
+	printf("The top %d words (out of %d) are:\n", k, (int) table -> size);
+
+
+	for (count = 0; count < k; count++)
+	{	
+		char* word = (table -> hashArr)[count] -> word;
+	 	long int freq = (table -> hashArr)[count] -> freq;
+	
+		/*k is bigger than word count*/
+		if (word == NULL){
+			break;	
+		}
+		printf("%9d %s\n", (int) freq, word);
+	
+
+	} 	
 	
 	destroyTable(table);     
 	return 0;
