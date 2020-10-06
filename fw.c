@@ -2,20 +2,20 @@
 # include <stdlib.h>
 # include <string.h>
 # include <math.h>
-#include <ctype.h>
-
+# include <ctype.h>
+# include <unistd.h>
 # include "table.h"
 
 
 /* This part of the program is responsible
- * for storing and organizing data into 
- * the structures defined in table.h, mainly
- * the hash table*/
+ *  * for storing and organizing data into 
+ *   * the structures defined in table.h, mainly
+ *    * the hash table*/
 
 
 /*This function is responsible for initializing
- * the hash table whenever we want to grow it 
- * or when first we create it. */
+ *  * the hash table whenever we want to grow it 
+ *   * or when first we create it. */
 void flagRealloc(Data **hashArr, int start, int end){
 	int count;
 	for(count = start; count < end; count ++)
@@ -30,7 +30,7 @@ void flagRealloc(Data **hashArr, int start, int end){
 
 void myRealloc(Table *table, long int new_cap){
 	long int old_cap = table -> cap;
-	Data ** new_array = malloc( new_cap * sizeof(Data *));
+	Data **new_array = malloc( new_cap * sizeof(Data *));
 	int count;
 	for (count = 0; count < old_cap; count++){
 
@@ -43,21 +43,23 @@ void myRealloc(Table *table, long int new_cap){
 
 }
 
+
+
 /* Initializes table structure with decently large 
- * capacity for the hash array. */
+ *  * capacity for the hash array. */
 Table *createHashTable(){
 	Table* table = malloc(2*sizeof(long int) + sizeof(Data **));
-	table -> cap =  31091;
+	table -> cap =  70793;
         table -> size = 0;
-	table -> hashArr = malloc(  31091 * sizeof(Data *));
-        flagRealloc(table -> hashArr, 0,  31091);
+	table -> hashArr = malloc( 70793 * sizeof(Data *));
+        flagRealloc(table -> hashArr, 0,  70793);
         return table;
 
 }
 
 /*Returns 0 if we don't need to grow table
- * and 1 if we do, the chosen load factor 
- * was 0.5*/
+ *  * and 1 if we do, the chosen load factor 
+ *   * was 0.5*/
 int isFull(Table *table){
 	if (table -> size / table -> cap > 0.5)
 		return 1;
@@ -73,10 +75,7 @@ void growTable(Table *table){
 	if (isFull(table) == 1){
 		old_cap = table -> cap;
 		new_cap = 2*old_cap + 1;
-		table -> cap = new_cap;
-		table -> hashArr = realloc(table, new_cap);
 		myRealloc(table, new_cap);
-	/*	flagRealloc(table -> hashArr, old_cap, new_cap); */
 	}
 }
 
@@ -94,25 +93,24 @@ int horner_hash(Table *table, char *string)
 		n = strlen(string);
 	}
 	for (count = 0; count < n; count++){
-		add =  (  (int) string[count] ) * ( (int) pow(7, n - 1 - count));
+add =  (  (int) string[count] ) * ( (int) pow(7, n - 1 - count));
 		h = h + add;
 	}
 	return h % (table -> cap);
 }
 
 /* Checking for Presence of Word, 
- * this takes into account quad. 
- * collisions. Returns 1 for presence
- * and 0 for absence. */
+ *  * this takes into account quad. 
+ *   * collisions. Returns 1 for presence
+ *    * and 0 for absence. */
 int isPresent(Table *table, char *string){
 	int index = horner_hash(table, string);
 	int new_index = index;
 	int count = 0;
 	Data **array = table -> hashArr;
 	/*Seemingly infinite loop ends because inevitably
- * 	reaches one of the following two conditions*/
+ *  * 	reaches one of the following two conditions*/
 	while (1>0){
-  		
 		/*If absent, returns false*/
 		if(array[new_index] -> word == NULL){
 			return 0;
@@ -121,16 +119,17 @@ int isPresent(Table *table, char *string){
 		} else if(strcmp(array[new_index] -> word, string) == 0){
 			return 1;
 		}else{
-		new_index = (index + (int) pow(2, count)) % (table -> cap);
+/*		new_index = (index + (int) pow(2, count)) % (table -> cap);*/
+		new_index = (index + count) % (table -> cap);
 		count++;
 		}
 	}
 }
 
 /* Calculates the index of a word inside the hash
- * table. If present, it outputs the actual index. 
- * Conversely, if absent, if defaults the index to
- * -1.*/
+ *  * table. If present, it outputs the actual index. 
+ *   * Conversely, if absent, if defaults the index to
+ *    * -1.*/
 
 int get_index(Table *table, char *string)
 {
@@ -146,14 +145,15 @@ int get_index(Table *table, char *string)
                         return new_index;
                 }else{
                  
-                new_index = (index + (int) pow(2, count)) % (table -> cap);
+               /* new_index = (index + (int) pow(2, count)) % (table -> cap);*/
+		new_index = (index + count) % (table -> cap);
         	count++;     
 	   }
 	}
 }
 
 /* Find the frequency of a word if present.
- * If not, outputs 0. */
+ *  * If not, outputs 0. */
 int get_freq(Table *table, int index){
 	Data **array = table -> hashArr;
 	Data *data = array[index];
@@ -162,9 +162,9 @@ int get_freq(Table *table, int index){
 }
 
 /* This function adds an element to the table
- * in case it was not present already, incrementing
- * the table size. Conversely, if the word is already 
- * present, it just increments its frequency*/
+ *  * in case it was not present already, incrementing
+ *   * the table size. Conversely, if the word is already 
+ *    * present, it just increments its frequency*/
 
 void add(Table *table, char *string)
 {	
@@ -176,8 +176,8 @@ void add(Table *table, char *string)
 	/*Checking for absence and growing table if necessary*/ 	
 	if (isPresent(table, string) == 0){
 		table -> size = (table -> size) + 1;
-		growTable(table);
 	}
+	growTable(table);
 	while (1 > 0){
 		/*New word in*/
 		if (array[new_index] -> word == NULL){
@@ -190,12 +190,11 @@ void add(Table *table, char *string)
 			old_freq = array[new_index] -> freq;
 			array[new_index] -> freq = old_freq + 1;
 			return;}		
-		new_index = (index + (int) pow(2, count) ) % (table -> cap);
+		/*new_index = (index + (int) pow(2, count) ) % (table -> cap);*/
+		new_index = (index + count) % (table -> cap);
 		count++;
 	}
 }
-
-
 /* This part is responsible for cleaning*/
 
 void destroyTable(Table *table)
@@ -222,7 +221,7 @@ void destroyWord(char *word){
 
 
 /* This part of the program will be responsible 
- * for reading words from an input file. */
+ *  * for reading words from an input file. */
 
 char *read_long_word(FILE *file){
         int currentChar;
@@ -232,7 +231,7 @@ char *read_long_word(FILE *file){
         currentChar = fgetc(file);
 	
 	/* Checking if first character is not part of a word, 
- 	 * for example, many white spaces.	         */
+ *  	 * for example, many white spaces.	         */
 	while ( isalpha(currentChar) == 0){
 		currentChar = fgetc(file);
 		if (currentChar == EOF)
@@ -265,14 +264,14 @@ char *read_long_word(FILE *file){
 }
 
 /* This part of the program is responsible for sorting 
- * the words in descending order. Then, words with higher
- * frequency will be first, and ties will be decided based
- * on reverse alphabetical order.*/
+ *  * the words in descending order. Then, words with higher
+ *   * frequency will be first, and ties will be decided based
+ *    * on reverse alphabetical order.*/
 
 
 /* This functions tells qsort how to compare two Data pointers.
- * Words with higher frequency will come first and ties will 
- * be decided upon reverse alphabetical order (descending order). */
+ *  * Words with higher frequency will come first and ties will 
+ *   * be decided upon reverse alphabetical order (descending order). */
 int compareData(const void *p1, const void *p2){
 	
 	Data *data1 = * (Data * const *) p1;
@@ -300,14 +299,17 @@ int compareData(const void *p1, const void *p2){
 
 
 /*This part of the program decides type of command line input
- *
- * TYPE 1: User uses -n and specifies how many words. 
- * TYPE 2: User doesn't use -n flag, program defaults k to 10.
- * */
+ *  *
+ *   * TYPE 1: User uses -n and specifies how many words. 
+ *    * TYPE 2: User doesn't use -n flag, program defaults k to 10.
+ *     * */
 
 
 
 int typeOfCommand(int argc, char* argv[]){
+	if (argc == 1){
+		return 3;
+	}
 	if( argv[1][0] != '/' && strcmp(argv[1], "-n") ==  0){
 
 		/*Used -n flag, but didn't give more inputs*/
@@ -339,18 +341,32 @@ int main(int argc, char *argv[]){
 	int k; 
 	int count;
 	int start = 1;
-/*Storing words in Hash Table*/
+	int stdinCheck = 0;
+	int end = argc;
+
+	/*Checking for stdin*/
+	if(!isatty(0)){
+		stdinCheck = 1;
+	}
+
+
+	/*Storing words in Hash Table*/
 	if (commandLine == 1){
 		k = atoi(argv[2]);	 
 		start = 3;
 	}else{
 		k = 10;
 	}
+	if (stdinCheck){
+		end = 2;	
+	}
+
 	/* Iterating over all files*/
-	for (count = start; count < argc; count++ ){
-	
+	for (count = start; count < end; count++ ){
 		FILE *currentFile = fopen(argv[count], "r");
-	
+		if (stdinCheck){
+			currentFile = stdin;
+		}
 		if ( currentFile != NULL){
 
 			char* currentWord = read_long_word(currentFile);
