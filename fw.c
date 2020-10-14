@@ -29,60 +29,80 @@ void flagRealloc(Data **hashArr, int start, int end){
 }
 
 void myRealloc(Table *table, long int new_cap){
-	long int old_cap = table -> cap;
-	Data **new_array = malloc( new_cap * sizeof(Data *));
 	int count;
+	int eleCount = 0;
+	Data **occupiedElements = malloc( (table -> size) * sizeof(Data*) );
+	Data **array = table -> hashArr;
+	for (count = 0; count < table -> cap; count++){
+		if (table -> hashArr[count] -> word != NULL){
+			 occupiedElements[eleCount] = table -> hashArr[count];
+			 eleCount++;
+		}
+	}
+
+	/*Changing Table*/
 	table -> cap = new_cap;
-	flagRealloc(new_array, 0, new_cap);
+	table -> hashArr =  malloc( new_cap * sizeof(Data *));
+	flagRealloc(table -> hashArr, 0, new_cap);
 
-	for (count = 0; count < old_cap; count++){
-		addGrow(table, new_array, table -> hashArr[count]);
-	}  
-
-	free(table -> hashArr);
-	table -> hashArr = new_array;
-
+	for (count = 0; count < table -> size; count++){
+		addGrow(table, occupiedElements[count]);
+	}
+	free(occupiedElements);  
+	 free(array);
 }
+
 
 /* This function is only used when growing the 
  * hashArr, we are passing table and a Data* and returning
  * void. */
-void addGrow(Table *table, Data** array, Data *data)
-{
- 	char *string = data -> word;
-       	int count = 0;
-	int index, new_index;
-	if (string != NULL){
-		index = horner_hash(table, string);
-		new_index = index;}
-	else{
-		free(data);
-	}
+void addGrow(Table *table, Data *data){
+	int index = horner_hash(table, data -> word);
+	int new_index = index;
+	Data **array = table -> hashArr;	
+        int count = 0;
         while (1 > 0){
-	        /*Found empty spot*/
+                /*Found empty spot*/
                 if (array[new_index] -> word == NULL){
-        		 free(array[new_index]);
-	               	 array[new_index] = data;
-			 return;
-               }
-		new_index = (index + count) % (table -> cap);
-		count++;
+                         free(array[new_index]);
+			 array[new_index] = data;
+			 return;}
+		new_index = (index + count) % (table -> cap);		
+                count++;
+        }
+
+}
+
+
+/*Only grow if necessary*/
+void growTable(Table *table){
+        long int old_cap, new_cap;
+        if (isFull(table) == 1){
+                old_cap = table -> cap;
+                new_cap = 2*old_cap + 1;
+                myRealloc(table, new_cap);
         }
 }
+
 
 /* Initializes table structure with decently large 
  *  * capacity for the hash array. */
 Table *createHashTable(){
 	Table* table = malloc(2*sizeof(long int) + sizeof(Data **));
-/*	table -> cap =  70793;
-        table -> size = 0;
-	table -> hashArr = malloc( 70793 * sizeof(Data *));
-        flagRealloc(table -> hashArr, 0,  70793);*/
 
-	table -> cap =  418665*2 + 1;
+
+	table -> cap =  31091; /*Very large arbitrary number*/
         table -> size = 0;
-        table -> hashArr = malloc( (418665*2 + 1) * sizeof(Data *));
-        flagRealloc(table -> hashArr, 0,  418665*2 + 1);
+        table -> hashArr = malloc( 31091 * sizeof(Data *));
+        flagRealloc(table -> hashArr, 0, 31091);
+
+/*
+ This was before, I figured it out resizing :)
+ 	table -> cap =  500000*2 + 1;
+        table -> size = 0;
+        table -> hashArr = malloc( (500000*2 + 1) * sizeof(Data *));
+        flagRealloc(table -> hashArr, 0, 500000*2 + 1);*/
+
 
         return table;
 
@@ -92,7 +112,7 @@ Table *createHashTable(){
  *  * and 1 if we do, the chosen load factor 
  *   * was 0.5*/
 int isFull(Table *table){
-	if (table -> size / table -> cap > 0.5)
+	if ( ((double) table -> size / (double) table -> cap) > 0.5)
 		return 1;
 	else{
 		return 0;
@@ -100,15 +120,6 @@ int isFull(Table *table){
 }
 
 
-/*Only grow if necessary*/
-void growTable(Table *table){
-	long int old_cap, new_cap;
-	if (isFull(table) == 1){
-		old_cap = table -> cap;
-		new_cap = 2*old_cap + 1;
-		myRealloc(table, new_cap);
-	}
-}
 
 
 /*The hash function is Horner's Rule*/
@@ -208,7 +219,6 @@ void add(Table *table, char *string)
 	if (isPresent(table, string) == 0){
 		table -> size = (table -> size) + 1;
 	}
-	growTable(table);
 	array = table -> hashArr;
 	while (1 > 0){
 		/*New word in*/
@@ -216,6 +226,7 @@ void add(Table *table, char *string)
 			Data *new_word = array[new_index];
 			new_word -> freq = 1;
 			new_word -> word = string;
+			growTable(table);
 			return;
 		}else if (strcmp(array[new_index] -> word, string) == 0){
 			

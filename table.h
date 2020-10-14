@@ -28,7 +28,7 @@ int isPresent(Table *table, char *string);
 int get_index(Table *table, char *string);
 int get_freq(Table *table, int index);
 void add(Table *table, char *string);
-
+void addGrow(Table *table, Data *data);
 
 /* Cleaning Table*/
 void destroyTable(Table *table);
